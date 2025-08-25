@@ -18,8 +18,8 @@ simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 import mpi4py.MPI
 
 ### User inputs
-namelist_file = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/namelist.input' #full path recommended
-wrfinput_reference_path = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/'
+#namelist_file = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/namelist.input' #full path recommended
+#wrfinput_reference_path = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/'#update this
 outfolder = './out/'
 localtime = +9 # Local time of Japan from UTC
 jstream_source_path = '/gs/bs/tga-guc-lab/compilation/wrf-chem-boundaries/chatani/j-stream/emisconv_dataset/v202407/input/J-STREAM_v202401/emis/EMIS_MESH/EMIS_MESH_J-STREAM_v202401_' #Not a file, but a prefix for the files
@@ -212,11 +212,13 @@ def master_construct(idate,meshes):
     source = glob(PM25EI_GS_source_path + f'*y{year}_m{month:02d}_h{hour:02d}_*full.pkl')[0]
     df_out_PM25EI_GS = extract_mozart_mosaic(source,dayweight,month_days,status='PM25EI_GS')
     source = glob(PM25EI_AS_source_path + f'*y{year}_m{month:02d}_h{hour:02d}_*full.pkl')[0]
+
     df_out_PM25EI_AS = extract_mozart_mosaic(source,dayweight,month_days,status='PM25EI_AS')
     
     df_out = pd.concat([df_out_jstream, df_out_PM25EI_GS, df_out_PM25EI_AS]).groupby(['lat','lon'], as_index=False)[[col for col in df_out_jstream.columns if col not in ['lat','lon']]].sum()
     df_out = df_out.reset_index(drop=True)
-    
+    df_out[df_out < 0] = 0 #added this to replace negative values with zero
+
     ### Generate for all domains.
     # Refers to the wrfinputs for the XLAT and XLONG variables.
     # Fill the path above.
@@ -268,7 +270,15 @@ def master_construct(idate,meshes):
                 regridder = xe.Regridder(df_regridder_from, df_regridder_target, 'conservative', periodic=False, ignore_degenerate=True, weights=regridder_file)
             df_wrfchemi_final = regridder(df_xr_out)
             df_wrfchemi_final = df_wrfchemi_final.rename({'y':'south_north','x':'west_east'})
+            #Replace negative values with zero.
+            for var in df_wrfchemi_final.data_vars:
+                if var.startswith("E_"):
+                    if (df_wrfchemi_final[var] < 0).any():
+                        print(f"[INFO] Negative values found in {var}, setting to zero.")
+                    df_wrfchemi_final[var] = df_wrfchemi_final[var].clip(min=0)
+
             df_wrfchemi_final = df_wrfchemi_final.expand_dims(dim='emissions_zdim')
+
             #Add the time information        
             df_wrfchemi_final['Times'] = df['Times'].copy()
             df_wrfchemi_final['Times'][:] = np.array([(f'{outyear}-{outmonth:02d}-{outday:02d}_{outhour:02d}:00:00').encode('utf-8')])
@@ -305,7 +315,7 @@ def master_construct(idate,meshes):
     return
 
 if not os.path.exists(outfolder):
-    os.makedirs(outfolder)
+    os.makedirs(outfolder,exist_ok=True)#updated this
 meshes = obtain_mesh_file()
 daterange, maxdom, dayweights = obtain_dates_from_namelist()
 

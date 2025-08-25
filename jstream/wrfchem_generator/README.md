@@ -1,9 +1,10 @@
-### About the files
+# wrfchemigen
 
-The job script is intended for Tsubame.
+Note: Under development
 
-The python script requires pickle files that were converted from the raw files of Dr. Chatani.
+Prepared by Alvin C.G. Varquez, Science Tokyo
+varquez.a.aa@m.titech.ac.jp
 
-This version uses, JSTREAM and domestic transport data only. Other emissions are not considered.
+Folder description:
 
-This script also creates emissions mainly for MOZART-Mosaic.
+jstream - The inputs were based on the works of Dr. Satoru Chatani (NIES)
