@@ -18,8 +18,8 @@ simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 import mpi4py.MPI
 
 ### User inputs
-#namelist_file = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/namelist.input' #full path recommended
-#wrfinput_reference_path = '/gs/bs/tga-guc-lab/users/chenz/simulations/210924_s1_t1/'#update this
+namelist_file = '/gs/bs/tga-guc-lab/users/dea/simulations/updatedmozbc/2021-08-29_09-04/newmegan_urban_ahe_jstream_202/namelist.input' #full path recommended
+wrfinput_reference_path = '/gs/bs/tga-guc-lab/users/dea/simulations/updatedmozbc/2021-08-29_09-04/newmegan_urban_ahe_jstream_202/'#update this
 outfolder = './out/'
 localtime = +9 # Local time of Japan from UTC
 jstream_source_path = '/gs/bs/tga-guc-lab/compilation/wrf-chem-boundaries/chatani/j-stream/emisconv_dataset/v202407/input/J-STREAM_v202401/emis/EMIS_MESH/EMIS_MESH_J-STREAM_v202401_' #Not a file, but a prefix for the files
@@ -207,11 +207,11 @@ def master_construct(idate,meshes):
     dayweight = dayweights[day_of_week]  # J-Stream has values from 1 to 7, so we use the weekday index directly
 
     #Checking if processed Jstreams already exist.
-    source = glob(jstream_source_path + f'*y{year}_m{month:02d}_h{hour:02d}_*full.pkl')[0]
+    source = glob(jstream_source_path + f'*y2021_m{month:02d}_h{hour:02d}_*full.pkl')[0]
     df_out_jstream = extract_mozart_mosaic(source,dayweight,month_days,status='jstream')
-    source = glob(PM25EI_GS_source_path + f'*y{year}_m{month:02d}_h{hour:02d}_*full.pkl')[0]
+    source = glob(PM25EI_GS_source_path + f'*y2021_m{month:02d}_h{hour:02d}_*full.pkl')[0]
     df_out_PM25EI_GS = extract_mozart_mosaic(source,dayweight,month_days,status='PM25EI_GS')
-    source = glob(PM25EI_AS_source_path + f'*y{year}_m{month:02d}_h{hour:02d}_*full.pkl')[0]
+    source = glob(PM25EI_AS_source_path + f'*y2021_m{month:02d}_h{hour:02d}_*full.pkl')[0]
 
     df_out_PM25EI_AS = extract_mozart_mosaic(source,dayweight,month_days,status='PM25EI_AS')
     
@@ -245,6 +245,8 @@ def master_construct(idate,meshes):
             df['lat'] = df['XLAT'][0,:,:]
             df = df.cf.add_bounds('lon')
             df = df.cf.add_bounds('lat')
+            regridder_file = f'{outfolder}/regridder_d{idom:02d}.nc'
+            #Recycle regridders to save time.
             dimensions = {
                     "lat": (('y','x'),df['XLAT'][0,:,:].values),
                     "lon": (('y','x'),df['XLONG'][0,:,:].values),
@@ -261,8 +263,6 @@ def master_construct(idate,meshes):
             df_regridder_from = df_regridder_from.set_coords('lat_b')
             df_regridder_from['lon_b']= cf_xarray.bounds_to_vertices(df_regridder_from['longitude_bounds'],bounds_dim='bounds')
             df_regridder_from = df_regridder_from.set_coords('lon_b')#xe.Regridder(df_regridder_from, df_target, resampler)#,ignore_degenerate=True)
-            regridder_file = f'{outfolder}/regridder_d{idom:02d}.nc'
-            #Recycle regridders to save time.
             if not os.path.exists(regridder_file):
                 regridder = xe.Regridder(df_regridder_from, df_regridder_target, 'conservative', periodic=False, ignore_degenerate=True)
                 regridder.to_netcdf(regridder_file)
