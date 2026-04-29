@@ -1,0 +1,49 @@
+name: Bug Report
+description: Create a report to help us improve the code.
+title: "[Bug]: <Short description>"
+labels: ["bug"]
+assignees:
+  - acgvar
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you for taking the time to report this bug!"
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: What steps led to the issue? Provide a minimal reproducible example if possible.
+      placeholder: |
+        1. Run script '...'
+        2. Pass arguments '...'
+        3. See error '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide information about your OS, Python version, etc.
+      placeholder: e.g., macOS Sonoma, Python 3.10
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs/Tracebacks
+      description: Please copy and paste any relevant log output or tracebacks. This will be automatically formatted into code, so no need for backticks.
+      render: shell
